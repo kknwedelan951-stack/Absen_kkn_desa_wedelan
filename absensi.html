@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Absensi KKN</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(37, 99, 235, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .success-message {
+            display: none;
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #a7f3d0;
+        }
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .history-table th, .history-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .history-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+        .history-table tr:hover {
+            background: #f9f9f9;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-hadir { background: #d1fae5; color: #065f46; }
+        .badge-sakit { background: #fee2e2; color: #991b1b; }
+        .badge-izin { background: #fef3c7; color: #92400e; }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+        .date-time {
+            font-size: 12px;
+            color: #999;
+        }
+        .date-display {
+            padding: 12px 14px;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>📋 Absensi KKN</h1>
+            <p>Desa Wedelan • Kelompok 2026</p>
+        </div>
+
+        <div class="card">
+            <div class="info-box">
+                💡 Absensi dibuka: 27 Juli - 5 September 2026
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('form', event)">📝 Absensi</button>
+                <button class="tab-btn" onclick="switchTab('history', event)">📋 Riwayat</button>
+            </div>
+
+            <!-- TAB 1: FORM ABSENSI -->
+            <div id="form" class="tab-content active">
+                <div class="success-message" id="successMsg">
+                    ✅ Absensi berhasil disimpan!
+                </div>
+
+                <form id="absensiForm" onsubmit="submitAbsensi(event)">
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap *</label>
+                        <input type="text" id="nama" name="nama" required placeholder="Masukkan nama Anda">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nim">NIM (Opsional)</label>
+                        <input type="text" id="nim" name="nim" placeholder="Nomor Induk Mahasiswa">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="kegiatan">Kegiatan Harian (Opsional)</label>
+                        <input type="text" id="kegiatan" name="kegiatan" placeholder="Misal: Mengajar, Rapat, dll">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tanggal Absensi</label>
+                        <div class="date-display" id="todayDateDisplay">-</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Keterangan *</label>
+                        <select id="status" name="status" required>
+                            <option value="">-- Pilih Status --</option>
+                            <option value="Hadir">✅ Hadir</option>
+                            <option value="Sakit">🏥 Sakit</option>
+                            <option value="Izin">📋 Izin</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">📤 Kirim Absensi</button>
+                </form>
+            </div>
+
+            <!-- TAB 2: RIWAYAT ABSENSI -->
+            <div id="history" class="tab-content">
+                <div id="historyContainer">
+                    <div class="empty-state">
+                        <p>Belum ada riwayat absensi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; color: white; font-size: 12px; margin-top: 20px;">
+            Absensi KKN Desa Wedelan 2026 • Berjalan di Browser
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'kkn_absensi_logs';
+        const ATTENDANCE_START = new Date('2026-07-27');
+        const ATTENDANCE_END = new Date('2026-09-05');
+
+        function isAttendanceWindowOpen() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return today >= ATTENDANCE_START && today <= ATTENDANCE_END;
+        }
+
+        function getToday() {
+            const today = new Date();
+            return today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function switchTab(tabName, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'history') {
+                renderHistory();
+            }
+        }
+
+        function submitAbsensi(e) {
+            e.preventDefault();
+
+            if (!isAttendanceWindowOpen()) {
+                alert('⚠️ Absensi hanya dibuka dari 27 Juli - 5 September 2026');
+                return;
+            }
+
+            const nama = document.getElementById('nama').value.trim();
+            const nim = document.getElementById('nim').value.trim();
+            const kegiatan = document.getElementById('kegiatan').value.trim();
+            const status = document.getElementById('status').value;
+
+            if (!nama || !status) {
+                alert('❌ Nama dan Status harus diisi!');
+                return;
+            }
+
+            const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            const today = getToday();
+
+            // Cek apakah sudah absen hari ini
+            const sudahAbsenHariIni = logs.some(log => log.nama === nama && log.tanggal === today);
+            if (sudahAbsenHariIni) {
+                alert(`✅ ${nama} sudah absen hari ini!`);
+                return;
+            }
+
+            // Tambah absensi baru
+            const newLog = {
+                id: Date.now(),
+                nama,
+                nim,
+                kegiatan,
+                status,
+                tanggal: today,
+                waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+            };
+
+            logs.unshift(newLog);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+
+            // Tampilkan success message
+            const successMsg = document.getElementById('successMsg');
+            successMsg.classList.add('show');
+            setTimeout(() => successMsg.classList.remove('show'), 3000);
+
+            // Reset form
+            document.getElementById('absensiForm').reset();
+        }
+
+        function renderHistory() {
+            const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            const container = document.getElementById('historyContainer');
+
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>📭 Belum ada riwayat absensi</p></div>';
+                return;
+            }
+
+            let html = '<table class="history-table"><thead><tr><th>Nama</th><th>Status</th><th>Tanggal</th><th>Waktu</th></tr></thead><tbody>';
+
+            logs.forEach(log => {
+                const badgeClass = `badge-${log.status.toLowerCase()}`;
+                html += `
+                    <tr>
+                        <td><strong>${log.nama}</strong>${log.nim ? `<br><span class="date-time">${log.nim}</span>` : ''}</td>
+                        <td><span class="badge ${badgeClass}">${log.status}</span></td>
+                        <td><span class="date-time">${log.tanggal}</span></td>
+                        <td><span class="date-time">${log.waktu}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Load history saat halaman dibuka
+        window.onload = function () {
+            const dateDisplay = document.getElementById('todayDateDisplay');
+            if (dateDisplay) {
+                dateDisplay.textContent = getToday();
+            }
+
+            if (!isAttendanceWindowOpen()) {
+                alert('⚠️ Saat ini di luar rentang absensi (27 Juli - 5 September 2026)');
+            }
+        };
+    </script>
+
+</body>
+</html>

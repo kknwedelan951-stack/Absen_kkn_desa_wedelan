@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Absensi KKN Desa Wedelan 2026</title>
+  <meta name="description" content="Sistem Absensi KKN Desa Wedelan 2026 berbasis QR Code yang berjalan langsung dari browser.">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" style="display:none;">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p>Memuat data absensi...</p>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">📇</div>
+      <div class="brand-text">
+        <h1>Absensi KKN Desa Wedelan 2026</h1>
+        <p>Dashboard Absensi • Kelompok KKN 2026 • Berjalan di Browser</p>
+      </div>
+    </div>
+    <div class="navbar-right no-print">
+      <span id="connectionBadge" class="conn-badge conn-offline">⚪ Mode Offline</span>
+      <button class="btn btn-secondary" onclick="refreshFromSheets()" title="Refresh data lokal">🔄 Refresh Data</button>
+      <button class="btn btn-secondary" onclick="exportToCsv()">📥 Export CSV</button>
+    </div>
+  </nav>
+
+  <!-- TAB NAVIGATION -->
+  <div class="tab-bar no-print">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard Rekap</button>
+    <button class="tab-btn" onclick="switchTab('form')">📝 Form Absensi</button>
+    <button class="tab-btn" onclick="switchTab('members')">👥 Data Anggota</button>
+    <button class="tab-btn" onclick="switchTab('logs')">📥 Riwayat Absensi</button>
+    <button class="tab-btn" onclick="switchTab('poster')">🖨️ Poster QR Code</button>
+    <button class="tab-btn" onclick="switchTab('tutorial')">🔗 Panduan Opsional</button>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div class="container">
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: DASHBOARD REKAP -->
+    <!-- ============================================================ -->
+    <div id="dashboard" class="tab-pane active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#d1fae5;color:#10b981;">✅</div>
+          <div>
+            <div class="stat-val" id="statTotalHadir">0</div>
+            <div class="stat-lbl">Total Hadir</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fef3c7;color:#f59e0b;">✉️</div>
+          <div>
+            <div class="stat-val" id="statTotalIzin">0</div>
+            <div class="stat-lbl">Total Izin</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fee2e2;color:#ef4444;">🏥</div>
+          <div>
+            <div class="stat-val" id="statTotalSakit">0</div>
+            <div class="stat-lbl">Total Sakit</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#eff6ff;color:#2563eb;">📈</div>
+          <div>
+            <div class="stat-val" id="statPersentaseGroup">0%</div>
+            <div class="stat-lbl">Rata-Rata Kehadiran</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 Rekapitulasi & Persentase Kehadiran per Anggota</div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-secondary" onclick="refreshFromSheets()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="sendRekapEmail()">✉️ Kirim Rekap</button>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak Rekap</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Peserta</th>
+                <th>NIM</th>
+                <th>Prodi</th>
+                <th>Hadir</th>
+                <th>Izin</th>
+                <th>Sakit</th>
+                <th>Total</th>
+                <th>Persentase (%)</th>
+                <th>Status Evaluasi</th>
+              </tr>
+            </thead>
+            <tbody id="tableRekapBody">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: FORM ABSENSI -->
+    <!-- ============================================================ -->
+    <div id="form" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📝 Formulir Input Absensi Peserta</div>
+        </div>
+
+        <div id="attendanceWindowNotice" class="callout">
+          💡 Absensi dibuka mulai 27 Juli 2026 sampai 5 September 2026. Form ini bisa diakses langsung dari HP setelah peserta scan QR Code.
+        </div>
+
+        <form id="formAbsensiMain" onsubmit="submitAttendance(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="selectNamaPeserta">Nama Lengkap Peserta</label>
+              <select id="selectNamaPeserta" required onchange="handleMemberSelectChange()">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="inputNim">NIM (Otomatis Terisi)</label>
+              <input type="text" id="inputNim" placeholder="Nomor Induk Mahasiswa" readonly style="background-color:#f1f5f9;">
+            </div>
+
+            <div class="form-group">
+              <label for="inputProdi">Program Studi</label>
+              <input type="text" id="inputProdi" placeholder="Program Studi" readonly style="background-color:#f1f5f9;">
+            </div>
+
+            <div class="form-group">
+              <label for="inputTanggalAbsensi">Tanggal Absensi</label>
+              <input type="text" id="inputTanggalAbsensi" placeholder="Contoh: 29 Juli 2026" required>
+            </div>
+
+            <div class="form-group">
+              <label for="selectShift">Shift Absensi</label>
+              <select id="selectShift" required>
+                <option value="Masuk">Masuk Pagi (07:30)</option>
+                <option value="Pulang">Pulang Sore (16:00)</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="inputKegiatan">Deskripsi Kegiatan Harian KKN</label>
+              <input type="text" id="inputKegiatan" placeholder="Contoh: Mengajar SD / Penyuluhan Kesehatan Stunting" required>
+            </div>
+
+            <div class="form-group">
+              <label for="selectStatus">Status Kehadiran</label>
+              <select id="selectStatus" required>
+                <option value="Hadir">🟢 Hadir</option>
+                <option value="Izin">🟡 Izin</option>
+                <option value="Sakit">🔴 Sakit</option>
+                <option value="Dinas / Luar posko">📍 Dinas / Luar posko</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="inputLokasiGps">Deteksi Lokasi GPS</label>
+              <div style="display:flex;gap:0.5rem;">
+                <input type="text" id="inputLokasiGps" placeholder="Klik tombol deteksi di samping ->" readonly>
+                <button type="button" class="btn btn-secondary" onclick="detectGpsLocation()">📍 Deteksi GPS</button>
+              </div>
+              <small id="gpsStatusText" style="color:var(--text-muted);font-size:0.8rem;margin-top:0.3rem;display:block;"></small>
+            </div>
+          </div>
+
+          <button type="submit" id="submitAttendanceButton" class="btn btn-primary" style="width:100%;margin-top:1rem;padding:1rem;font-size:1rem;">
+            ✅ Kirim Absensi Kehadiran
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: DATA ANGGOTA -->
+    <!-- ============================================================ -->
+    <div id="members" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ Tambah Peserta Baru</div>
+        </div>
+        <form id="formAddMember" onsubmit="addMember(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="newNama">Nama Lengkap</label>
+              <input type="text" id="newNama" placeholder="Contoh: Rian Pratama" required>
+            </div>
+            <div class="form-group">
+              <label for="newNim">NIM</label>
+              <input type="text" id="newNim" placeholder="Contoh: 210101006" required>
+            </div>
+            <div class="form-group">
+              <label for="newProdi">Program Studi</label>
+              <input type="text" id="newProdi" placeholder="Contoh: Teknik Sipil">
+            </div>
+            <div class="form-group">
+              <label for="newHp">Nomor WhatsApp</label>
+              <input type="tel" id="newHp" placeholder="Contoh: 08123456789">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success">➕ Tambahkan Anggota</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 Daftar Anggota KKN</div>
+            <button class="btn btn-secondary" onclick="refreshFromSheets()">🔄 Refresh Data</button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Lengkap</th>
+                <th>NIM</th>
+                <th>Program Studi</th>
+                <th>Nomor HP</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableMembersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 4: LOG RIWAYAT -->
+    <!-- ============================================================ -->
+    <div id="logs" class="tab-pane">
+      <div class="card">
+        <div class="card-header" style="flex-direction:column;align-items:flex-start; gap:1rem;">
+          <div class="card-title">📥 Log Riwayat Absensi</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;width:100%;justify-content:space-between;align-items:center;">
+            <input id="searchLogsInput" type="search" placeholder="Cari nama, NIM, status, kegiatan..." oninput="handleLogSearch(event)" style="flex:1;min-width:220px;padding:0.9rem 1rem;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#0f172a;">
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="refreshFromSheets()">🔄 Refresh Data</button>
+              <button class="btn btn-secondary" onclick="sendRekapEmail()">✉️ Kirim Rekap</button>
+              <button class="btn btn-secondary" onclick="exportToCsv()">📥 Export CSV</button>
+              <button class="btn btn-secondary" onclick="exportLogsToPdf()">📄 Export PDF</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Nama Lengkap</th>
+                <th>NIM</th>
+                <th>Kegiatan</th>
+                <th>Shift</th>
+                <th>Status</th>
+                <th>Koordinat GPS</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableLogsBody"></tbody>
+          </table>
+        </div>
+        <div id="printLogsWrapper" class="print-section" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 5: POSTER QR CODE -->
+    <!-- ============================================================ -->
+    <div id="poster" class="tab-pane">
+      <div style="display:flex;justify-content:center;align-items:center;min-height:60vh;padding:2rem 0;">
+        <div style="max-width:500px;width:100%;">
+          <div class="poster-card" style="padding:2.5rem;">
+            <div class="poster-header">ABSENSI KEHADIRAN KKN</div>
+            <div class="poster-sub">KKN Desa Wedelan Kelompok 2026</div>
+            <div id="posterQrCode" style="display:flex;justify-content:center;margin:1.5rem auto;padding:1rem;background:#fff;border:1px solid #e2e8f0;border-radius:0.75rem;"></div>
+            <p style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:0.3rem;">📱 SCAN DENGAN KAMERA HP</p>
+            <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.5;">Arahkan kamera ke QR Code untuk melakukan absensi kehadiran</p>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:1.5rem;padding:1rem;" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 6: PANDUAN KONEKSI GOOGLE SHEETS -->
+    <!-- ============================================================ -->
+    <div id="tutorial" class="tab-pane">
+      <div class="card">
+        <div class="card-title">🔗 Panduan Opsional untuk Google Sheets</div>
+        
+        <div class="callout" style="background:#dbeafe;border-left-color:#2563eb;margin-bottom:1rem;">
+          💡 <b>Untuk penggunaan biasa, Anda tidak perlu mengisi link apa pun.</b> Sistem sudah siap bekerja langsung dari browser dan menyimpan data di perangkat Anda.
+        </div>
+
+        <ol style="padding-left:1.2rem;line-height:2.2;font-size:0.95rem;color:#334155;">
+          <li>
+            <b>Buka Google Spreadsheet Anda:</b><br>
+            <a href="https://docs.google.com/spreadsheets/d/16rp1nNW21Tbq-ct0adzWVk2PXk71fH1ViDmbQ54Nz5o/edit" target="_blank" style="color:var(--primary);">
+              🔗 Klik di sini untuk membuka Spreadsheet
+            </a>
+          </li>
+          <li>
+            <b>Buka Apps Script:</b> Klik menu <b>Ekstensi</b> → <b>Apps Script</b>
+          </li>
+          <li>
+            <b>Ganti seluruh kode</b> di editor dengan isi file <code>Code.gs</code> yang sudah dibuat.<br>
+            <small>📁 File ada di: <code>c:\Users\LOQ\Documents\Qr kkn\Code.gs</code></small>
+          </li>
+          <li>
+            <b>Deploy sebagai Web App:</b><br>
+            Klik <b>Deploy</b> → <b>New Deployment</b><br>
+            • Type: <b>Web App</b><br>
+            • Execute as: <b>Me</b><br>
+            • Who has access: <b>Anyone</b><br>
+            Klik <b>Deploy</b> → <b>Authorize Access</b> → Salin <b>URL Web App</b>
+          </li>
+          <li>
+            <b>Inisialisasi Sheet:</b> Setelah deploy, buka URL Web App + <code>?action=init</code> di browser untuk membuat sheet dan mengisi data peserta otomatis.
+          </li>
+          <li>
+            <b>Tempel URL ke app.js:</b><br>
+            Buka file <code>app.js</code> → temukan baris:<br>
+            <code>const GOOGLE_SCRIPT_URL = 'TEMPEL_URL_WEB_APP_DISINI';</code><br>
+            Ganti <code>TEMPEL_URL_WEB_APP_DISINI</code> dengan URL Web App Anda.
+          </li>
+          <li>
+            <b>Selesai!</b> Refresh halaman ini. Badge di kanan atas akan berubah menjadi <span style="color:#10b981;font-weight:700;">🟢 Terhubung Google Sheets</span>
+          </li>
+        </ol>
+
+        <div class="callout" style="background:#d1fae5;border-left-color:#10b981;margin-top:1.5rem;">
+          ✅ <b>Jika Anda ingin sinkron ke Google Sheets</b>, fitur itu bisa ditambahkan nanti, tetapi untuk saat ini absensi tetap berjalan normal tanpa link apa pun.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end container -->
+
+  <footer>
+    Absensi KKN Desa Wedelan Kelompok 2026 • Berjalan di Browser • 100% Free
+    &nbsp;|&nbsp; <a href="absensi.html" style="color:inherit;text-decoration:underline;">📝 Form Absensi Mobile</a>
+    &nbsp;|&nbsp; <a href="qr_generator.html" style="color:inherit;text-decoration:underline;">📋 QR Generator</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
